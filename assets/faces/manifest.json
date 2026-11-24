@@ -1,0 +1,486 @@
+{
+  "faces": {
+    "smile": {
+      "id": "smile",
+      "name": "憨笑",
+      "file": "assets/faces/smile.png",
+      "model": "wan2.7-image"
+    },
+    "anxious": {
+      "id": "anxious",
+      "name": "紧张",
+      "file": "assets/faces/anxious.png",
+      "model": "wan2.7-image"
+    },
+    "love": {
+      "id": "love",
+      "name": "花痴",
+      "file": "assets/faces/love.png",
+      "model": "wan2.7-image"
+    },
+    "determined": {
+      "id": "determined",
+      "name": "倔强",
+      "file": "assets/faces/determined.png",
+      "model": "wan2.7-image"
+    },
+    "cool": {
+      "id": "cool",
+      "name": "墨镜",
+      "file": "assets/faces/cool.png",
+      "model": "wan2.7-image"
+    },
+    "sob": {
+      "id": "sob",
+      "name": "大哭",
+      "file": "assets/faces/sob.png",
+      "model": "wan2.7-image"
+    },
+    "peace": {
+      "id": "peace",
+      "name": "安心",
+      "file": "assets/faces/peace.png",
+      "model": "wan2.7-image"
+    },
+    "muted": {
+      "id": "muted",
+      "name": "禁言",
+      "file": "assets/faces/muted.png",
+      "model": "wan2.7-image"
+    },
+    "sleep": {
+      "id": "sleep",
+      "name": "睡着",
+      "file": "assets/faces/sleep.png",
+      "model": "z-image-turbo"
+    },
+    "tired": {
+      "id": "tired",
+      "name": "疲惫",
+      "file": "assets/faces/tired.png",
+      "model": "z-image-turbo"
+    },
+    "hot": {
+      "id": "hot",
+      "name": "发烧",
+      "file": "assets/faces/hot.png",
+      "model": "z-image-turbo"
+    },
+    "rage": {
+      "id": "rage",
+      "name": "暴怒",
+      "file": "assets/faces/rage.png",
+      "model": "z-image-turbo"
+    },
+    "wink": {
+      "id": "wink",
+      "name": "吐舌",
+      "file": "assets/faces/wink.png",
+      "model": "z-image-turbo"
+    },
+    "grin": {
+      "id": "grin",
+      "name": "露齿",
+      "file": "assets/faces/grin.png",
+      "model": "z-image-turbo"
+    },
+    "gasp": {
+      "id": "gasp",
+      "name": "吃惊",
+      "file": "assets/faces/gasp.png",
+      "model": "z-image-turbo"
+    },
+    "sad": {
+      "id": "sad",
+      "name": "难过",
+      "file": "assets/faces/sad.png",
+      "model": "z-image-turbo"
+    },
+    "worried": {
+      "id": "worried",
+      "name": "担心",
+      "file": "assets/faces/worried.png",
+      "model": "z-image-turbo"
+    },
+    "joy": {
+      "id": "joy",
+      "name": "大笑",
+      "file": "assets/faces/joy.png",
+      "model": "z-image-turbo"
+    },
+    "sick": {
+      "id": "sick",
+      "name": "恶心",
+      "file": "assets/faces/sick.png",
+      "model": "z-image-turbo"
+    },
+    "shy": {
+      "id": "shy",
+      "name": "害羞",
+      "file": "assets/faces/shy.png",
+      "model": "z-image-turbo"
+    },
+    "blush": {
+      "id": "blush",
+      "name": "脸红",
+      "file": "assets/faces/blush.png",
+      "model": "z-image-turbo"
+    },
+    "uplook": {
+      "id": "uplook",
+      "name": "仰望",
+      "file": "assets/faces/uplook.png",
+      "model": "z-image-turbo"
+    },
+    "sideeye": {
+      "id": "sideeye",
+      "name": "斜视",
+      "file": "assets/faces/sideeye.png",
+      "model": "z-image-turbo"
+    },
+    "flat": {
+      "id": "flat",
+      "name": "无眼",
+      "file": "assets/faces/flat.png",
+      "model": "z-image-turbo"
+    },
+    "mad": {
+      "id": "mad",
+      "name": "恼火",
+      "file": "assets/faces/mad.png",
+      "model": "z-image-turbo"
+    },
+    "haha": {
+      "id": "haha",
+      "name": "哈哈",
+      "file": "assets/faces/haha.png",
+      "model": "z-image-turbo"
+    },
+    "soldier": {
+      "id": "soldier",
+      "name": "士兵",
+      "file": "assets/faces/soldier.png",
+      "model": "z-image-turbo"
+    },
+    "curse": {
+      "id": "curse",
+      "name": "骂骂",
+      "file": "assets/faces/curse.png",
+      "model": "z-image-turbo"
+    },
+    "confuse": {
+      "id": "confuse",
+      "name": "困惑",
+      "file": "assets/faces/confuse.png",
+      "model": "z-image-turbo"
+    },
+    "shush": {
+      "id": "shush",
+      "name": "嘘",
+      "file": "assets/faces/shush.png",
+      "model": "z-image-turbo"
+    },
+    "dizzy": {
+      "id": "dizzy",
+      "name": "晕眩",
+      "file": "assets/faces/dizzy.png",
+      "model": "z-image-turbo"
+    },
+    "soot": {
+      "id": "soot",
+      "name": "煤球",
+      "file": "assets/faces/soot.png",
+      "model": "z-image-turbo"
+    },
+    "skull": {
+      "id": "skull",
+      "name": "骷髅",
+      "file": "assets/faces/skull.png",
+      "model": "z-image-turbo"
+    },
+    "search": {
+      "id": "search",
+      "name": "窥探",
+      "file": "assets/faces/search.png",
+      "model": "z-image-turbo"
+    },
+    "ponder": {
+      "id": "ponder",
+      "name": "沉思",
+      "file": "assets/faces/ponder.png",
+      "model": "z-image-turbo"
+    },
+    "smirk": {
+      "id": "smirk",
+      "name": "奸笑",
+      "file": "assets/faces/smirk.png",
+      "model": "z-image-turbo"
+    },
+    "bored": {
+      "id": "bored",
+      "name": "无聊",
+      "file": "assets/faces/bored.png",
+      "model": "z-image-turbo"
+    },
+    "plead": {
+      "id": "plead",
+      "name": "可怜",
+      "file": "assets/faces/plead.png",
+      "model": "z-image-turbo"
+    },
+    "teeth": {
+      "id": "teeth",
+      "name": "龇牙",
+      "file": "assets/faces/teeth.png",
+      "model": "z-image-turbo"
+    },
+    "cheeky": {
+      "id": "cheeky",
+      "name": "得意",
+      "file": "assets/faces/cheeky.png",
+      "model": "z-image-turbo"
+    },
+    "sneer": {
+      "id": "sneer",
+      "name": "冷笑",
+      "file": "assets/faces/sneer.png",
+      "model": "z-image-turbo"
+    },
+    "cry": {
+      "id": "cry",
+      "name": "哭哭",
+      "file": "assets/faces/cry.png",
+      "model": "z-image-turbo"
+    },
+    "downcast": {
+      "id": "downcast",
+      "name": "失落",
+      "file": "assets/faces/downcast.png",
+      "model": "z-image-turbo"
+    },
+    "smug": {
+      "id": "smug",
+      "name": "满足",
+      "file": "assets/faces/smug.png",
+      "model": "z-image-turbo"
+    },
+    "kiss": {
+      "id": "kiss",
+      "name": "飞吻",
+      "file": "assets/faces/kiss.png",
+      "model": "z-image-turbo"
+    },
+    "sparkle": {
+      "id": "sparkle",
+      "name": "星星眼",
+      "file": "assets/faces/sparkle.png",
+      "model": "z-image-turbo"
+    },
+    "happy": {
+      "id": "happy",
+      "name": "开心",
+      "file": "assets/faces/happy.png",
+      "model": "z-image-turbo"
+    },
+    "mask": {
+      "id": "mask",
+      "name": "口罩",
+      "file": "assets/faces/mask.png",
+      "model": "z-image-turbo"
+    },
+    "wow": {
+      "id": "wow",
+      "name": "哇",
+      "file": "assets/faces/wow.png",
+      "model": "z-image-turbo"
+    },
+    "rofl": {
+      "id": "rofl",
+      "name": "笑翻",
+      "file": "assets/faces/rofl.png",
+      "model": "z-image-turbo"
+    },
+    "scream": {
+      "id": "scream",
+      "name": "惊恐",
+      "file": "assets/faces/scream.png",
+      "model": "z-image-turbo"
+    },
+    "sigh": {
+      "id": "sigh",
+      "name": "释然",
+      "file": "assets/faces/sigh.png",
+      "model": "z-image-turbo"
+    },
+    "eyeroll": {
+      "id": "eyeroll",
+      "name": "翻白眼",
+      "file": "assets/faces/eyeroll.png",
+      "model": "z-image-turbo"
+    },
+    "wave": {
+      "id": "wave",
+      "name": "挥手",
+      "file": "assets/faces/wave.png",
+      "model": "z-image-turbo"
+    },
+    "lol": {
+      "id": "lol",
+      "name": "笑哭",
+      "file": "assets/faces/lol.png",
+      "model": "z-image-turbo"
+    },
+    "scheme": {
+      "id": "scheme",
+      "name": "坏笑",
+      "file": "assets/faces/scheme.png",
+      "model": "z-image-turbo"
+    },
+    "doubt": {
+      "id": "doubt",
+      "name": "怀疑",
+      "file": "assets/faces/doubt.png",
+      "model": "z-image-turbo"
+    },
+    "sweet": {
+      "id": "sweet",
+      "name": "甜笑",
+      "file": "assets/faces/sweet.png",
+      "model": "z-image-turbo"
+    },
+    "hug": {
+      "id": "hug",
+      "name": "抱抱",
+      "file": "assets/faces/hug.png",
+      "model": "z-image-turbo"
+    },
+    "munch": {
+      "id": "munch",
+      "name": "啃啃",
+      "file": "assets/faces/munch.png",
+      "model": "z-image-turbo"
+    },
+    "fight": {
+      "id": "fight",
+      "name": "奋斗",
+      "file": "assets/faces/fight.png",
+      "model": "z-image-turbo"
+    },
+    "blank": {
+      "id": "blank",
+      "name": "面瘫",
+      "file": "assets/faces/blank.png",
+      "model": "z-image-turbo"
+    },
+    "shock": {
+      "id": "shock",
+      "name": "震惊",
+      "file": "assets/faces/shock.png",
+      "model": "z-image-turbo"
+    },
+    "whistle": {
+      "id": "whistle",
+      "name": "吹口哨",
+      "file": "assets/faces/whistle.png",
+      "model": "z-image-turbo"
+    },
+    "arrogant": {
+      "id": "arrogant",
+      "name": "傲娇",
+      "file": "assets/faces/arrogant.png",
+      "model": "z-image-turbo"
+    },
+    "doggo": {
+      "id": "doggo",
+      "name": "柴犬",
+      "file": "assets/faces/doggo.png",
+      "model": "z-image-turbo"
+    },
+    "pose": {
+      "id": "pose",
+      "name": "摆酷",
+      "file": "assets/faces/pose.png",
+      "model": "z-image-turbo"
+    },
+    "slap": {
+      "id": "slap",
+      "name": "捂脸",
+      "file": "assets/faces/slap.png",
+      "model": "z-image-turbo"
+    },
+    "star": {
+      "id": "star",
+      "name": "星星",
+      "file": "assets/faces/star.png",
+      "model": "z-image-turbo"
+    },
+    "lookdown": {
+      "id": "lookdown",
+      "name": "低头",
+      "file": "assets/faces/lookdown.png",
+      "model": "z-image-turbo"
+    },
+    "liu": {
+      "id": "liu",
+      "name": "666",
+      "file": "assets/faces/liu.png",
+      "model": "z-image-turbo"
+    },
+    "peek": {
+      "id": "peek",
+      "name": "偷看",
+      "file": "assets/faces/peek.png",
+      "model": "z-image-turbo"
+    },
+    "freeze": {
+      "id": "freeze",
+      "name": "冻住",
+      "file": "assets/faces/freeze.png",
+      "model": "z-image-turbo"
+    },
+    "bawling": {
+      "id": "bawling",
+      "name": "泪崩",
+      "file": "assets/faces/bawling.png",
+      "model": "z-image-turbo"
+    },
+    "cracked": {
+      "id": "cracked",
+      "name": "裂开",
+      "file": "assets/faces/cracked.png",
+      "model": "z-image-turbo"
+    },
+    "lips": {
+      "id": "lips",
+      "name": "嘴唇",
+      "file": "assets/faces/lips.png",
+      "model": "wan2.7-image"
+    },
+    "heart": {
+      "id": "heart",
+      "name": "爱心",
+      "file": "assets/faces/heart.png",
+      "model": "wan2.7-image"
+    },
+    "broke": {
+      "id": "broke",
+      "name": "碎心",
+      "file": "assets/faces/broke.png",
+      "model": "wan2.7-image"
+    },
+    "sprout": {
+      "id": "sprout",
+      "name": "豆芽",
+      "file": "assets/faces/sprout.png",
+      "model": "wan2.7-image"
+    },
+    "thumbsup": {
+      "id": "thumbsup",
+      "name": "点赞",
+      "file": "assets/faces/thumbsup.png",
+      "model": "wan2.7-image"
+    }
+  },
+  "model": "wan2.7-image",
+  "updatedAt": "2026-11-24T02:19:25.333Z"
+}

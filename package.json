@@ -1,0 +1,12 @@
+{
+  "name": "tongkuancai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "表情大冲关 · 大中小表情堆叠坠落三消（点选三个）",
+  "scripts": {
+    "dev": "node tools/devserver.js",
+    "test": "node tools/smoke.js",
+    "gen:faces": "node tools/gen-faces.js",
+    "gen:audio": "node tools/gen-audio.js"
+  }
+}
