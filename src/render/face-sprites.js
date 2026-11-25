@@ -8,8 +8,10 @@
 const P = require('../platform.js');
 const { FACES } = require('../data/faces.js');
 
-const SPRITE_SIZE = 128;
-const cache = Object.create(null);
+// 与分包源图同档缓存，避免二次缩小再放大发糊
+const SPRITE_HI = 320;
+const FACE_DIR = 'pkg-faces/';
+const cacheHi = Object.create(null);
 let started = false;
 let readyN = 0;
 
@@ -95,21 +97,22 @@ function contentBounds(img) {
   }
 }
 
-function bakeSprite(img) {
-  const c = makeOffscreen(SPRITE_SIZE, SPRITE_SIZE);
+function bakeSprite(img, size) {
+  const S = size || SPRITE_HI;
+  const c = makeOffscreen(S, S);
   if (!c) return img;
   const ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
+  ctx.clearRect(0, 0, S, S);
 
   const box = contentBounds(img);
   if (!box || box.w < 8 || box.h < 8) {
     // 整图等比放入，不放大裁边
-    const iw = img.width || SPRITE_SIZE;
-    const ih = img.height || SPRITE_SIZE;
-    const sc = Math.min(SPRITE_SIZE / iw, SPRITE_SIZE / ih) * 0.96;
+    const iw = img.width || S;
+    const ih = img.height || S;
+    const sc = Math.min(S / iw, S / ih) * 0.96;
     const dw = iw * sc;
     const dh = ih * sc;
-    ctx.drawImage(img, 0, 0, iw, ih, (SPRITE_SIZE - dw) / 2, (SPRITE_SIZE - dh) / 2, dw, dh);
+    ctx.drawImage(img, 0, 0, iw, ih, (S - dw) / 2, (S - dh) / 2, dw, dh);
     return c;
   }
 
@@ -132,12 +135,12 @@ function bakeSprite(img) {
   const sw = Math.min(side, iw - x);
   const sh = Math.min(side, ih - y);
 
-  const margin = SPRITE_SIZE * 0.06;
-  const fit = SPRITE_SIZE - margin * 2;
+  const margin = S * 0.06;
+  const fit = S - margin * 2;
   const zoom = fit / Math.max(sw, sh);
   const dw = sw * zoom;
   const dh = sh * zoom;
-  ctx.drawImage(img, x, y, sw, sh, (SPRITE_SIZE - dw) / 2, (SPRITE_SIZE - dh) / 2, dw, dh);
+  ctx.drawImage(img, x, y, sw, sh, (S - dw) / 2, (S - dh) / 2, dw, dh);
   return c;
 }
 
@@ -166,13 +169,13 @@ function startLoad() {
   started = true;
   for (let i = 0; i < FACES.length; i++) {
     const id = FACES[i].id;
-    const src = 'assets/faces/' + id + '.png';
+    const src = FACE_DIR + id + '.png';
     loadImage(src).then((img) => {
       if (!img) return;
       try {
-        cache[id] = bakeSprite(img);
+        cacheHi[id] = bakeSprite(img, SPRITE_HI);
       } catch (e) {
-        cache[id] = img;
+        cacheHi[id] = img;
       }
       readyN++;
     });
@@ -180,7 +183,7 @@ function startLoad() {
 }
 
 function getFaceImage(id) {
-  return cache[id] || null;
+  return cacheHi[id] || null;
 }
 
 function readyCount() {
@@ -188,9 +191,11 @@ function readyCount() {
 }
 
 function drawFaceSprite(ctx, faceId, r) {
-  const img = cache[faceId];
+  const img = cacheHi[faceId];
   if (!img) return false;
   ctx.save();
+  if (ctx.imageSmoothingEnabled != null) ctx.imageSmoothingEnabled = true;
+  if (ctx.imageSmoothingQuality) ctx.imageSmoothingQuality = 'high';
   // 用略大的圆裁剪，避免外轮廓被硬切
   ctx.beginPath();
   ctx.arc(0, r * 0.02, r * 1.02, 0, Math.PI * 2);

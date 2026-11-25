@@ -5,5 +5,16 @@
     "request": 10000,
     "connectSocket": 10000
   },
-  "permission": {}
+  "permission": {},
+  "subpackages": [
+    {
+      "name": "faces",
+      "root": "pkg-faces/"
+    }
+  ],
+  "parallelPreloadSubpackages": [
+    {
+      "name": "faces"
+    }
+  ]
 }

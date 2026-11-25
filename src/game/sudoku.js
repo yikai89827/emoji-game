@@ -8,8 +8,17 @@ const sound = require('../audio/sound.js');
 const { showBanner, hideBanner, reservedBottom } = require('../ads/custom-ad.js');
 const { showRewarded } = require('../ads/rewarded.js');
 const { rollSudokuSkin } = require('../data/mode-skin.js');
+const { colorOf } = require('../data/faces.js');
 const rank = require('../data/rank.js');
 const daily = require('../data/daily.js');
+
+function hexAlpha(hex, a) {
+  let h = String(hex || '#f0a010').replace('#', '');
+  if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+  const n = parseInt(h, 16);
+  if (!isFinite(n)) return 'rgba(240,160,16,' + a + ')';
+  return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')';
+}
 
 /**
  * 表情数独：9 表情代替 9 数字
@@ -368,10 +377,15 @@ class SudokuScene {
     ctx.fillStyle = Theme.inkSoft;
     ctx.fillText('9 表情代数字 · 行/列/宫不重复', W * 0.5, s.top + 36);
 
-    // 棋盘底
+    // 棋盘底 + 线色跟表情外圈同色，减少色系打架
+    const ringFill = colorOf(this.ringColor).fill;
     roundRect(ctx, this.boardX - 2, this.boardY - 2, this.boardS + 4, this.boardS + 4, 10);
-    ctx.fillStyle = 'rgba(255,248,236,0.95)';
+    ctx.fillStyle = 'rgba(255,248,236,0.96)';
     ctx.fill();
+    ctx.strokeStyle = hexAlpha(ringFill, 0.45);
+    ctx.lineWidth = 2;
+    roundRect(ctx, this.boardX - 2, this.boardY - 2, this.boardS + 4, this.boardS + 4, 10);
+    ctx.stroke();
 
     for (let r = 0; r < 9; r++) {
       for (let c = 0; c < 9; c++) {
@@ -379,22 +393,22 @@ class SudokuScene {
         const y = this.boardY + r * this.cell;
         const sel =
           this.selected && this.selected.r === r && this.selected.c === c;
-        // 宫底色交替
+        // 宫底色：同色浅染，去掉粉块
         const br = Math.floor(r / 3);
         const bc = Math.floor(c / 3);
         if ((br + bc) % 2 === 1) {
-          ctx.fillStyle = 'rgba(255,180,196,0.12)';
+          ctx.fillStyle = hexAlpha(ringFill, 0.1);
           ctx.fillRect(x, y, this.cell, this.cell);
         }
         if (sel) {
-          ctx.fillStyle = 'rgba(240,160,16,0.22)';
+          ctx.fillStyle = hexAlpha(ringFill, 0.28);
           ctx.fillRect(x, y, this.cell, this.cell);
         }
         if (this._cellGlowing(r, c)) {
-          const pulse = 0.35 + 0.35 * Math.sin(this.t * 14);
-          ctx.fillStyle = 'rgba(94,230,168,' + pulse + ')';
+          const pulse = 0.3 + 0.3 * Math.sin(this.t * 14);
+          ctx.fillStyle = hexAlpha(ringFill, pulse);
           ctx.fillRect(x, y, this.cell, this.cell);
-          ctx.strokeStyle = 'rgba(255,230,100,0.85)';
+          ctx.strokeStyle = hexAlpha(ringFill, 0.9);
           ctx.lineWidth = 2.5;
           ctx.strokeRect(x + 1, y + 1, this.cell - 2, this.cell - 2);
         }
@@ -414,11 +428,11 @@ class SudokuScene {
       }
     }
 
-    // 网格线：细线 + 宫粗线
+    // 网格线：与表情外圈同色（宫线更实、格线更淡）
     for (let i = 0; i <= 9; i++) {
       const thick = i % 3 === 0;
-      ctx.strokeStyle = thick ? 'rgba(91,70,54,0.55)' : 'rgba(91,70,54,0.18)';
-      ctx.lineWidth = thick ? 2.2 : 1;
+      ctx.strokeStyle = thick ? hexAlpha(ringFill, 0.72) : hexAlpha(ringFill, 0.28);
+      ctx.lineWidth = thick ? 2.4 : 1;
       const x = this.boardX + i * this.cell;
       const y = this.boardY + i * this.cell;
       ctx.beginPath();
@@ -443,7 +457,7 @@ class SudokuScene {
       if (this.palette === i) {
         ctx.beginPath();
         ctx.arc(cx, cy, slot * 0.38, 0, Math.PI * 2);
-        ctx.strokeStyle = Theme.gold;
+        ctx.strokeStyle = hexAlpha(ringFill, 0.95);
         ctx.lineWidth = 2.5;
         ctx.stroke();
       }

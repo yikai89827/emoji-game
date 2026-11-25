@@ -3,8 +3,7 @@
 const { colorOf, faceOf } = require('../data/faces.js');
 const { drawFace } = require('./faces-draw.js');
 const { drawFaceSprite, getFaceImage, startLoad } = require('./face-sprites.js');
-
-startLoad();
+// startLoad 由 main 在表情分包就绪后调用
 
 function shade(hex, amount) {
   const n = hex.replace('#', '');

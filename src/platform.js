@@ -38,9 +38,8 @@ function syncCanvas() {
     ww = wh;
     wh = t;
   }
-  const longBuf = Math.max(canvas.width || 0, canvas.height || 0);
-  const longLogic = Math.max(ww, wh);
-  const px = longBuf > longLogic * 1.25 ? longBuf / longLogic : 1;
+  // 始终按设备像素比渲染，表情/UI 才清晰（上限 3 控内存）
+  const px = Math.min(Math.max(DPR, 1), 3);
   const wantW = Math.max(1, Math.round(ww * px));
   const wantH = Math.max(1, Math.round(wh * px));
   if (Math.abs(canvas.width - wantW) > 2 || Math.abs(canvas.height - wantH) > 2) {

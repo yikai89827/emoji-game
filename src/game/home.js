@@ -10,6 +10,93 @@ const { showHomeBanner, hideHomeBanner, reservedBottom } = require('../ads/custo
 const { APP_VERSION } = require('../system/update.js');
 
 /**
+ * 经典♥判定：双圆叶瓣 + 尖底锥，顶部心窝挖空
+ * nx∈[-1,1], ny∈[-1,1]，尖朝下
+ */
+function inHeartNorm(nx, ny) {
+  const x = Math.abs(nx); // 判定用绝对 x，天然左右对称
+  const y = ny;
+  // 顶部心窝挖空（挖掉中间几颗）
+  if (y < -0.22 && x < 0.34) return false;
+  if (y < -0.40 && x < 0.52) return false;
+
+  const lobeX = 0.44;
+  const lobeY = -0.26;
+  const lobeR = 0.54;
+  const inLobe = Math.hypot(nx - lobeX, y - lobeY) <= lobeR ||
+    Math.hypot(nx + lobeX, y - lobeY) <= lobeR;
+
+  // 中段填实（堆实，不留底侧空洞）
+  let inBody = false;
+  if (y >= -0.12 && y < 0.38) {
+    const half = 0.84 - Math.max(0, y) * 0.25;
+    inBody = x <= half;
+  }
+
+  // 尖底对称收束到中心一点
+  let inTip = false;
+  if (y >= 0.32 && y <= 1.08) {
+    const t = (y - 0.32) / (1.08 - 0.32);
+    const half = (1 - t) * (1 - t) * 0.7;
+    inTip = x <= Math.max(0.05, half);
+  }
+
+  return inLobe || inBody || inTip;
+}
+
+/**
+ * 实心红心：按行生成中轴对称坐标（不先采半边再镜像，避免六边形偏移造成左右不齐）
+ */
+function buildHeartFill(r, halfW, halfH) {
+  const minD = r * 2 + 1.2;
+  const stepY = minD * 0.866;
+  const stepX = minD;
+  const sx = Math.max(halfW, 1);
+  const sy = Math.max(halfH, 1);
+  const picked = [];
+  let row = 0;
+  for (let y = -sy; y <= sy + 0.1; y += stepY, row++) {
+    // 每行从中轴向外对称铺：0, ±1, ±2…（奇数行半步偏移也成对）
+    const xOff = (row % 2) * (stepX * 0.5);
+    const cols = [];
+    if (xOff < 0.01) {
+      cols.push(0);
+      for (let k = 1; k * stepX <= sx + 0.1; k++) {
+        cols.push(-k * stepX, k * stepX);
+      }
+    } else {
+      for (let k = 0; xOff + k * stepX <= sx + 0.1; k++) {
+        const x = xOff + k * stepX;
+        cols.push(-x, x);
+      }
+    }
+    for (let i = 0; i < cols.length; i++) {
+      const x = cols[i];
+      if (!inHeartNorm(x / sx, y / sy)) continue;
+      let ok = true;
+      for (let j = 0; j < picked.length; j++) {
+        if (Math.hypot(x - picked[j].dx, y - picked[j].dy) < minD - 0.05) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) picked.push({ dx: x, dy: y });
+    }
+  }
+  // 保证尖底有中心点，底部左右对称收束
+  const tip = { dx: 0, dy: sy * 0.92 };
+  let tipOk = true;
+  for (let j = 0; j < picked.length; j++) {
+    if (Math.hypot(tip.dx - picked[j].dx, tip.dy - picked[j].dy) < minD - 0.05) {
+      tipOk = false;
+      break;
+    }
+  }
+  if (tipOk && inHeartNorm(0, tip.dy / sy)) picked.push(tip);
+  return picked;
+}
+
+/**
  * 首页：左栏音频/玩法/每日 · 右栏分享/排行/更多 + 开始 + 底部模板广告
  */
 class HomeScene {
@@ -122,9 +209,8 @@ class HomeScene {
       this.btnCloseModal,
     ];
 
-    // 装饰团子堆
+    // 装饰团子：实心小红心密铺，同平面不重叠、不抖动
     this.decos = [];
-    // 首页装饰堆：红 / 黄 / 侧栏同款绿
     const palette = ['crimson', 'amber', 'leaf'];
     const showcase = [
       'heart', 'wink', 'sprout', 'star', 'cool', 'doggo', 'love', 'sparkle',
@@ -132,45 +218,26 @@ class HomeScene {
       'sleep', 'rage', 'skull', 'thumbsup', 'kiss', 'soot', 'confuse', 'rofl',
     ];
     const pileX = W * 0.5;
-    const pileY = Math.min(H * 0.5, by - 90);
-    const pile = [
-      { dx: -62, dy: 48, r: 30 },
-      { dx: -22, dy: 52, r: 34 },
-      { dx: 20, dy: 50, r: 32 },
-      { dx: 58, dy: 46, r: 28 },
-      { dx: -70, dy: 10, r: 26 },
-      { dx: -34, dy: 14, r: 30 },
-      { dx: 2, dy: 18, r: 36 },
-      { dx: 38, dy: 12, r: 30 },
-      { dx: 72, dy: 8, r: 24 },
-      { dx: -48, dy: -22, r: 26 },
-      { dx: -12, dy: -18, r: 28 },
-      { dx: 26, dy: -24, r: 27 },
-      { dx: 58, dy: -28, r: 22 },
-      { dx: -30, dy: -52, r: 22 },
-      { dx: 6, dy: -56, r: 24 },
-      { dx: 40, dy: -54, r: 20 },
-      { dx: -8, dy: -82, r: 20 },
-      { dx: 22, dy: -86, r: 18 },
-      { dx: -88, dy: 30, r: 20 },
-      { dx: 90, dy: 26, r: 18 },
-    ];
-    for (let i = 0; i < pile.length; i++) {
-      const p = pile[i];
+    const pileY = Math.min(H * 0.45, by - 100);
+    const faceR = Math.min(24, Math.max(18, W * 0.058));
+    // 红心随表情加大，整体略放大
+    const halfW = Math.min(W * 0.34, 138);
+    const halfH = Math.min(W * 0.32, 128);
+    const heart = buildHeartFill(faceR, halfW, halfH);
+    for (let i = 0; i < heart.length; i++) {
+      const p = heart[i];
       this.decos.push({
         x: pileX + p.dx,
         y: pileY + p.dy,
-        r: p.r,
+        r: faceR,
         face: showcase[i % showcase.length],
         color: palette[i % palette.length],
-        phase: i * 0.55,
-        bobAmp: 2 + (i % 4) * 0.6,
       });
     }
   }
 
   _share() {
-    const title = '表情大冲关 · 连消同款表情冲分！';
+    const title = '表情大冲关 · 表情玩法合集！';
     const imageUrl = '';
     if (typeof wx !== 'undefined' && wx.shareAppMessage) {
       try {
@@ -283,13 +350,11 @@ class HomeScene {
     ctx.fillRect(0, 0, W, H * 0.6);
     ctx.restore();
 
-    const ordered = this.decos.slice().sort((a, c) => a.y - c.y);
-    for (let i = 0; i < ordered.length; i++) {
-      const d = ordered[i];
-      const bob = Math.sin(this.t * 1.2 + d.phase) * (d.bobAmp || 3);
+    for (let i = 0; i < this.decos.length; i++) {
+      const d = this.decos[i];
       drawDango(ctx, {
         x: d.x,
-        y: d.y + bob,
+        y: d.y,
         r: d.r,
         face: d.face,
         color: d.color,
@@ -309,7 +374,7 @@ class HomeScene {
 
     ctx.font = '500 13px ' + FONT;
     ctx.fillStyle = Theme.inkSoft;
-    ctx.fillText('连消同款表情 · 点亮你的小宇宙', W * 0.5, titleY + 48);
+    ctx.fillText('表情玩法合集 · 点亮你的小宇宙', W * 0.5, titleY + 48);
     ctx.font = '500 11px ' + FONT;
     ctx.fillStyle = Theme.inkMute;
     ctx.fillText('v' + APP_VERSION, W * 0.5, titleY + 68);

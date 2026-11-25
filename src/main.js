@@ -12,34 +12,44 @@ const { PickScene } = require('./game/pick.js');
 const { bindLifecycle, preloadAll: preloadInterstitial } = require('./ads/interstitial.js');
 const { hideAll } = require('./ads/custom-ad.js');
 const { bindUpdateCheck } = require('./system/update.js');
+const { loadFacesPackage } = require('./ads/faces-pkg.js');
+const { startLoad: startFaceSprites } = require('./render/face-sprites.js');
+
+/** 场景注册表：新增玩法只需在此加一行 */
+const SCENES = {
+  home: HomeScene,
+  game: Scene,
+  more: MoreScene,
+  fuse2048: Fuse2048Scene,
+  sudoku: SudokuScene,
+  spotdiff: SpotDiffScene,
+  match3: Match3Scene,
+  pick: PickScene,
+};
 
 const app = {
   scene: null,
+
+  /** 注册/覆盖场景（便于分包或热插拔） */
+  register(name, Ctor) {
+    if (!name || typeof Ctor !== 'function') return;
+    SCENES[name] = Ctor;
+  },
+
   goto(name, opts) {
     opts = opts || {};
+    const Ctor = SCENES[name];
+    if (!Ctor) {
+      console.warn('[app] unknown scene:', name);
+      return;
+    }
     if (this.scene && this.scene.destroy) {
       try {
         this.scene.destroy();
       } catch (e) { /* ignore */ }
     }
     hideAll();
-    if (name === 'home') {
-      this.scene = new HomeScene(this);
-    } else if (name === 'game') {
-      this.scene = new Scene(this, opts);
-    } else if (name === 'more') {
-      this.scene = new MoreScene(this);
-    } else if (name === 'fuse2048') {
-      this.scene = new Fuse2048Scene(this);
-    } else if (name === 'sudoku') {
-      this.scene = new SudokuScene(this);
-    } else if (name === 'spotdiff') {
-      this.scene = new SpotDiffScene(this);
-    } else if (name === 'match3') {
-      this.scene = new Match3Scene(this);
-    } else if (name === 'pick') {
-      this.scene = new PickScene(this, opts);
-    }
+    this.scene = new Ctor(this, opts);
   },
 };
 
@@ -65,4 +75,8 @@ function start() {
   });
 }
 
-start();
+// 先拉表情分包，再解码贴图，避免主包超限
+loadFacesPackage().then(() => {
+  startFaceSprites();
+  start();
+});

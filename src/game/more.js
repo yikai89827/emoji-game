@@ -428,19 +428,10 @@ class MoreScene {
 
       const face = FACES[i];
       const unlocked = album.isUnlocked(face.id);
-      const color = ['cream', 'pink', 'mint', 'sky'][i % 4];
-      // 外圈放大，名称画在圆内底部
-      const ringR = a.cell * 0.44;
-      const faceY = y - a.cell * 0.06;
-      const faceR = a.cell * 0.30;
-
-      ctx.beginPath();
-      ctx.arc(x, y, ringR, 0, Math.PI * 2);
-      ctx.fillStyle = 'rgba(255,252,245,0.92)';
-      ctx.fill();
-      ctx.strokeStyle = unlocked ? 'rgba(122,184,220,0.85)' : 'rgba(91,70,54,0.22)';
-      ctx.lineWidth = 2.4;
-      ctx.stroke();
+      const color = ['cream', 'pink', 'mint', 'sky', 'amber'][i % 5];
+      // 不要额外底色/色圈：表情 + 下方名称
+      const faceR = a.cell * 0.32;
+      const faceY = y - a.cell * 0.08;
 
       drawDango(ctx, {
         x: x,
@@ -463,11 +454,11 @@ class MoreScene {
         ctx.fillText('🔒', x, faceY);
       }
 
-      ctx.font = '600 10px ' + FONT;
+      ctx.font = '600 11px ' + FONT;
       ctx.fillStyle = unlocked ? Theme.inkSoft : 'rgba(91,70,54,0.35)';
       ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(unlocked ? face.name || face.id : '未解锁', x, y + ringR * 0.62);
+      ctx.textBaseline = 'top';
+      ctx.fillText(unlocked ? face.name || face.id : '未解锁', x, faceY + faceR + 4);
 
       this._faceHits.push({
         x: x - a.cell / 2,

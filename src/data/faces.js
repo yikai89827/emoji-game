@@ -129,11 +129,14 @@ const LEVEL_PALETTES = [
   ['pink', 'ink', 'mint', 'crimson'], // 6+
 ];
 
-/** 全玩法统一视觉半径：不再出特别小的球，避免「裁切后显得残缺」 */
+/**
+ * 全玩法统一半径。
+ * r≈26：单颗够大、密铺仍能铺满竖屏玩法区。
+ */
 const SIZES = {
-  S: { key: 'S', r: 30, mass: 1.0, label: '标准' },
-  M: { key: 'M', r: 30, mass: 1.0, label: '标准' },
-  L: { key: 'L', r: 30, mass: 1.0, label: '标准' },
+  S: { key: 'S', r: 26, mass: 1.0, label: '标准' },
+  M: { key: 'M', r: 26, mass: 1.0, label: '标准' },
+  L: { key: 'L', r: 26, mass: 1.0, label: '标准' },
 };
 
 const SIZE_KEYS = ['M'];

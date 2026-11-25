@@ -472,16 +472,11 @@ class Fuse2048Scene {
         drawDango(ctx, {
           x: cx,
           y: cy,
-          r: cs * 0.42,
+          r: cs * 0.44,
           face: meta.face,
           color: this.ringColor,
           selected: false,
         });
-        ctx.font = '700 10px ' + FONT;
-        ctx.fillStyle = Theme.inkMute;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillText(meta.label, cx, y + cs - 14);
       }
     }
 

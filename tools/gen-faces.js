@@ -18,7 +18,7 @@ const https = require('https');
 const http = require('http');
 
 const ROOT = path.join(__dirname, '..');
-const OUT_DIR = path.join(ROOT, 'assets', 'faces');
+const OUT_DIR = path.join(ROOT, 'pkg-faces');
 const MANIFEST = path.join(OUT_DIR, 'manifest.json');
 
 const FACES = require('../src/data/faces.js').FACES;
@@ -224,7 +224,7 @@ async function genOne(face) {
   if (!url) throw new Error('响应无图片 URL: ' + JSON.stringify(result).slice(0, 400));
   const file = path.join(OUT_DIR, face.id + '.png');
   await download(url, file);
-  return { id: face.id, name: face.name, file: 'assets/faces/' + face.id + '.png', model: MODEL };
+  return { id: face.id, name: face.name, file: 'pkg-faces/' + face.id + '.png', model: MODEL };
 }
 
 async function main() {
@@ -254,7 +254,7 @@ async function main() {
       manifest.faces[face.id] = {
         id: face.id,
         name: face.name,
-        file: 'assets/faces/' + face.id + '.png',
+        file: 'pkg-faces/' + face.id + '.png',
         model: MODEL,
       };
       ok++;

@@ -31,10 +31,28 @@ const AD_UNITS = {
 };
 
 const _ads = Object.create(null);
+/** @type {Record<string, Function>} */
+const _errorHandlers = Object.create(null);
 let _busy = false;
+let _preloaded = false;
 
 function unitOf(reason) {
   return AD_UNITS[reason] || '';
+}
+
+function bindErrorOnce(ad, unitId) {
+  if (!ad || _errorHandlers[unitId]) return;
+  const onError = (err) => {
+    console.warn('[rewarded]', unitId, err);
+  };
+  // 激励广告按 adUnitId 单例；先卸旧监听，避免重复 onError 警告
+  try {
+    if (typeof ad.offError === 'function') ad.offError();
+  } catch (e) { /* ignore */ }
+  try {
+    ad.onError(onError);
+    _errorHandlers[unitId] = onError;
+  } catch (e) { /* ignore */ }
 }
 
 function ensureAd(unitId) {
@@ -43,9 +61,7 @@ function ensureAd(unitId) {
   if (typeof wx === 'undefined' || !wx.createRewardedVideoAd) return null;
   try {
     const ad = wx.createRewardedVideoAd({ adUnitId: unitId });
-    ad.onError((err) => {
-      console.warn('[rewarded]', unitId, err);
-    });
+    bindErrorOnce(ad, unitId);
     // 预加载
     try {
       ad.load().catch(() => {});
@@ -58,12 +74,18 @@ function ensureAd(unitId) {
   }
 }
 
-/** 预创建各广告实例（进游戏时可调） */
+/** 预创建各广告实例（进游戏时可调；全局只跑一次） */
 function preloadAll() {
+  if (_preloaded) return;
   if (typeof wx === 'undefined' || !wx.createRewardedVideoAd) return;
+  _preloaded = true;
   const keys = Object.keys(AD_UNITS);
+  const seen = Object.create(null);
   for (let i = 0; i < keys.length; i++) {
-    ensureAd(AD_UNITS[keys[i]]);
+    const id = AD_UNITS[keys[i]];
+    if (!id || seen[id]) continue;
+    seen[id] = 1;
+    ensureAd(id);
   }
 }
 
@@ -117,6 +139,8 @@ function showRewarded(reason, done) {
   };
 
   try {
+    // 避免上次异常残留导致重复 onClose
+    if (typeof ad.offClose === 'function') ad.offClose();
     ad.onClose(onClose);
   } catch (e) {
     finish(false, 'onclose_fail');

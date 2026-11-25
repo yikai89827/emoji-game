@@ -1,18 +1,25 @@
 {
   "description": "表情大冲关",
   "packOptions": {
-    "ignore": [],
+    "ignore": [
+      { "type": "folder", "value": "tools" },
+      { "type": "folder", "value": ".git" },
+      { "type": "file", "value": "index.html" },
+      { "type": "file", "value": "package.json" },
+      { "type": "suffix", "value": ".md" },
+      { "type": "glob", "value": "assets/icon/**" }
+    ],
     "include": []
   },
   "setting": {
     "bundle": false,
     "es6": true,
     "postcss": false,
-    "minified": false,
+    "minified": true,
     "urlCheck": false,
     "compileWorklet": false,
     "uglifyFileName": false,
-    "uploadWithSourceMap": true,
+    "uploadWithSourceMap": false,
     "enhance": false,
     "packNpmManually": false,
     "packNpmRelationList": [],
@@ -28,7 +35,7 @@
       "outputPath": ""
     }
   },
-  "compileType": "game",
+  "compileType": "minigame",
   "libVersion": "3.5.5",
   "appid": "wxd7ed85aa92c88005",
   "projectname": "tongkuancai",

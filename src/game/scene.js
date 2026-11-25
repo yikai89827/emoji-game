@@ -2,7 +2,7 @@
 
 const P = require('../platform.js');
 const { Piece } = require('../entity/piece.js');
-const { levelConfig, colorOf, CLEAR_SCORE } = require('../data/faces.js');
+const { levelConfig, colorOf, CLEAR_SCORE, SIZES } = require('../data/faces.js');
 const { drawDango } = require('../render/dango.js');
 const { Button, roundRect, FONT } = require('../ui/button.js');
 const { Theme } = require('../ui/theme.js');
@@ -115,11 +115,13 @@ class Scene {
     this.endAnimT = 0;
     this.spawnQueue = 0;
     this.bootFreezeT = 0;
-    // 开局从空场往下砸，看到从 0 堆满的过程
-    this.introLeft = 78;
+    // 开局整堆砸下再散开铺平；数量按玩法区动态算满
+    this.introLeft = this._calcIntroCount();
     this.introCd = 0;
     this.introDone = false;
     this._introWait = 0;
+    this._introBurst = false;
+    this._holdIntroFreeze = false;
     this.msg = this.cfg.title + ' · 目标 ' + this.cfg.targetScore;
     this.msgT = 1.6;
     this.hintLine = '点选入槽 · 3 个同色同表情消除';
@@ -310,43 +312,151 @@ class Scene {
     const b = this.bounds();
     const W = b.right - b.left;
     for (let i = 0; i < n; i++) {
-      const x = b.left + 30 + Math.random() * (W - 60);
-      const y = b.top - 24 - Math.random() * 50 - i * 8;
+      // 中途补货：少量从上方掉入
+      const x = b.left + 36 + Math.random() * (W - 72);
+      const y = b.top - 28 - Math.random() * 40 - i * 14;
       const p = this.makePiece(x, y);
-      p.vx = (Math.random() - 0.5) * 60;
-      p.vy = 120 + Math.random() * 140;
+      p.vx = (Math.random() - 0.5) * 90;
+      p.vy = 80 + Math.random() * 100;
+      p.settled = false;
+      p.settleT = 0;
       this.pieces.push(p);
     }
   }
 
-  /** 开局落雨：每次掉几颗，堆从空到满 */
+  /** 按玩法区估算：大球密铺到顶 */
+  _calcIntroCount() {
+    const b = this.bounds();
+    const r = (SIZES.M && SIZES.M.r) || 26;
+    const sep = r * 2 + (phys.PACK_GAP || 1.2);
+    const cols = Math.max(5, Math.floor((b.right - b.left) / sep));
+    // ceil 略超量，散开后顶到上沿
+    const rows = Math.max(6, Math.ceil((b.bottom - b.top) / (sep * 0.866)));
+    return Math.max(48, Math.min(90, cols * rows));
+  }
+
+  /** 开局：先聚成一堆砸下来 */
+  spawnIntroDump() {
+    const n = this.introLeft;
+    if (n <= 0) return;
+    this.introLeft = 0;
+    const b = this.bounds();
+    const cx = (b.left + b.right) * 0.5;
+    const cy = b.top - 70;
+    for (let i = 0; i < n; i++) {
+      // 紧密螺旋团，看起来是「一堆」
+      const ang = i * 2.399;
+      const rad = 6 + Math.sqrt(i) * 7.2;
+      const x = cx + Math.cos(ang) * rad + (Math.random() - 0.5) * 4;
+      const y = cy - Math.sqrt(i) * 5.5 - Math.random() * 6;
+      const p = this.makePiece(x, y);
+      p.vx = (Math.random() - 0.5) * 40;
+      p.vy = 680 + Math.random() * 160;
+      p.settled = false;
+      p.settleT = 0;
+      this.pieces.push(p);
+    }
+  }
+
+  /** 落地后瞬间向外炸开，铺满平面 */
+  _burstFlatten() {
+    if (this._introBurst || this.pieces.length === 0) return;
+    this._introBurst = true;
+    let sx = 0;
+    let sy = 0;
+    let n = 0;
+    for (let i = 0; i < this.pieces.length; i++) {
+      const p = this.pieces[i];
+      if (!p.alive) continue;
+      sx += p.x;
+      sy += p.y;
+      n++;
+    }
+    if (n < 1) return;
+    const cx = sx / n;
+    const cy = sy / n;
+    const b = this.bounds();
+    const midX = (b.left + b.right) * 0.5;
+    for (let i = 0; i < this.pieces.length; i++) {
+      const p = this.pieces[i];
+      if (!p.alive) continue;
+      p.settled = false;
+      p.settleT = 0;
+      let dx = p.x - cx;
+      let dy = p.y - cy;
+      let d = Math.hypot(dx, dy);
+      if (d < 4) {
+        const a = (i / Math.max(1, n)) * Math.PI * 2;
+        dx = Math.cos(a);
+        dy = Math.sin(a) * 0.35;
+        d = 1;
+      }
+      // 强力径向散开 + 一点上跳，随后重力压回铺平
+      const push = 280 + Math.random() * 220 + d * 1.8;
+      p.vx = (dx / d) * push + (p.x < midX ? -40 : 40) * Math.random();
+      p.vy = (dy / d) * push * 0.45 - (180 + Math.random() * 120);
+    }
+    phys.separateOverlaps(this.pieces, b, 4);
+  }
+
+  /** 开局：一堆砸下 → 立刻散开铺平（约 1～2 秒）→ 开玩 */
   updateIntro(dt) {
     if (this.introDone) return;
-    this.introCd -= dt;
-    if (this.introLeft > 0 && this.introCd <= 0) {
-      const n = Math.min(3, this.introLeft);
-      this.spawnBatch(n);
-      this.introLeft -= n;
-      this.introCd = 0.05;
+    if (this.introLeft > 0) {
+      this.spawnIntroDump();
+      this._introWait = 0;
+      this._introBurst = false;
     }
-    if (this.introLeft > 0 || this.pieces.length === 0) return;
+    if (this.pieces.length === 0) return;
     this._introWait += dt;
+
+    // 砸到底附近或 0.22s 后：立刻炸开铺平
+    if (!this._introBurst) {
+      const floorHit = phys.maxY(this.pieces) > this.bounds().bottom - 60;
+      if (this._introWait >= 0.22 || floorHit) this._burstFlatten();
+    } else if (this._introWait < 0.85) {
+      // 散开阶段持续硬分离，帮它们铺满平面
+      phys.separateOverlaps(this.pieces, this.bounds(), 2);
+    }
+
     const moving = phys.movingCount(this.pieces);
-    // 掉完后：基本停稳，或最多等约 2.8 秒强制开局，避免一直抖卡在开局
-    if (moving <= 6 || this._introWait > 2.8) {
+    if ((this._introWait >= 1.25 && moving <= 6) || this._introWait >= 2.2) {
+      // 若堆顶距玩法区顶还有空档，再补一小波压满
+      this._topUpIfSparse();
       this.introDone = true;
-      for (let i = 0; i < this.pieces.length; i++) {
-        const p = this.pieces[i];
-        if (!p.alive) continue;
-        if (Math.hypot(p.vx, p.vy) < 90) {
-          p.settled = true;
-          p.vx = 0;
-          p.vy = 0;
-        }
-      }
+      phys.packFlat(this.pieces, this.bounds(), 8);
       phys.wakeUnsupported(this.pieces, this.bounds());
-      this.bootFreezeT = 1.0;
+      phys.packFlat(this.pieces, this.bounds(), 4);
+      phys.freezeAll(this.pieces);
+      this.bootFreezeT = 0.35;
+      this._holdIntroFreeze = true;
       this.flashMsg('开始！', 0.7);
+    }
+  }
+
+  /** 堆不够高时再往上塞一批，压出压迫感 */
+  _topUpIfSparse() {
+    const b = this.bounds();
+    const topGap = phys.minY(this.pieces) - b.top;
+    if (!(topGap > 48)) return;
+    const r = (SIZES.M && SIZES.M.r) || 26;
+    const sep = r * 2 + (phys.PACK_GAP || 1.2);
+    const cols = Math.max(4, Math.floor((b.right - b.left) / sep));
+    const needRows = Math.min(3, Math.ceil(topGap / (sep * 0.866)));
+    const n = cols * needRows;
+    const y0 = b.top + r + 4;
+    for (let i = 0; i < n; i++) {
+      const col = i % cols;
+      const row = (i / cols) | 0;
+      const x = b.left + r + 2 + col * sep + (row % 2) * (sep * 0.5);
+      const y = y0 + row * sep * 0.866;
+      if (x + r > b.right - 2) continue;
+      const p = this.makePiece(x, y);
+      p.vx = (Math.random() - 0.5) * 80;
+      p.vy = 200 + Math.random() * 120;
+      p.settled = false;
+      p.settleT = 0;
+      this.pieces.push(p);
     }
   }
 
@@ -453,7 +563,7 @@ class Scene {
     this.spawnQueue += Math.min(4, Math.max(2, (n / 2) | 0));
     this.score += Math.min(n, 8) * 30;
     phys.wakeUnsupported(this.pieces, this.bounds());
-    this.bootFreezeT = Math.max(this.bootFreezeT, 0.9);
+    this.bootFreezeT = Math.max(this.bootFreezeT, 0.25);
     this.flashMsg('轰！+' + Math.min(n, 8) * 30, 0.9);
     if (n > 0) sound.playClear();
     this.checkWin();
@@ -479,7 +589,7 @@ class Scene {
     const gain = Math.min(280, n * 15);
     this.score += gain;
     phys.wakeUnsupported(this.pieces, this.bounds());
-    this.bootFreezeT = Math.max(this.bootFreezeT, 0.9);
+    this.bootFreezeT = Math.max(this.bootFreezeT, 0.25);
     this.flashMsg('清一色！+' + gain, 1);
     if (n > 0) sound.playClear();
     this.checkWin();
@@ -508,9 +618,9 @@ class Scene {
     piece.vx = 0;
     piece.vy = 0;
 
-    // 立刻叫醒失去支撑的上层，避免浮空
+    // 立刻叫醒失去支撑的上层，让悬空球掉下来
     phys.wakeUnsupported(this.pieces, this.bounds());
-    this.bootFreezeT = Math.max(this.bootFreezeT, 0.85);
+    this.bootFreezeT = Math.max(this.bootFreezeT, 0.25);
 
     this.flyers.push({
       piece: piece,
@@ -567,7 +677,7 @@ class Scene {
       this.score += CLEAR_SCORE;
       this.shake = 0.32;
       this.spawnQueue += 3;
-      this.flashMsg('同款！+' + CLEAR_SCORE, 0.45);
+      this.flashMsg('同款 +' + CLEAR_SCORE, 1.1);
       sound.playClear();
       cleared = true;
     }
@@ -716,22 +826,22 @@ class Scene {
       if (!p.alive || p === center) continue;
       const d = Math.hypot(p.x - center.x, p.y - center.y);
       const near = d < center.r + p.r + 56 && d > 0.5;
-      // 正上方一整列：去掉支撑后要掉下来
+      // 上方整片：支撑没了要掉
       const above =
-        p.y < center.y &&
-        Math.abs(p.x - center.x) < center.r + p.r + 28 &&
-        d < 220;
+        p.y < center.y - 4 &&
+        Math.abs(p.x - center.x) < center.r + p.r + 36 &&
+        d < 260;
       if (!near && !above) continue;
       p.wake();
       if (above) {
-        p.vy += 60 + Math.random() * 40;
+        p.vy = Math.max(p.vy, 0) + 140 + Math.random() * 60;
       } else if (d > 1) {
         const nx = (p.x - center.x) / d;
         const ny = (p.y - center.y) / d;
         p.vx += nx * (70 + Math.random() * 50);
-        p.vy += ny * (30 + Math.random() * 30) - 20;
+        p.vy += ny * (30 + Math.random() * 30) + 40;
       } else {
-        p.vy += 50;
+        p.vy += 90;
       }
     }
   }
@@ -775,22 +885,24 @@ class Scene {
 
     const b = this.bounds();
     this.updateIntro(dt);
-    phys.step(this.pieces, b, Math.min(dt, 1 / 30));
 
-    // 补货/塌陷冷却：到期后锁住有支撑的球；浮空的继续掉
-    if (this.bootFreezeT > 0) {
+    // 开局「开始！」短冻结；对局中 bootFreeze 只平静抖动，绝不冻住悬空球
+    if (this._holdIntroFreeze) {
+      phys.freezeAll(this.pieces);
       this.bootFreezeT -= dt;
       if (this.bootFreezeT <= 0) {
-        for (let i = 0; i < this.pieces.length; i++) {
-          const p = this.pieces[i];
-          if (!p.alive || p.settled) continue;
-          if (Math.hypot(p.vx, p.vy) < 55) {
-            p.settled = true;
-            p.vx = 0;
-            p.vy = 0;
-          }
-        }
+        this._holdIntroFreeze = false;
+        this.bootFreezeT = 0;
         phys.wakeUnsupported(this.pieces, b);
+      }
+    } else {
+      phys.step(this.pieces, b, Math.min(dt, 1 / 30));
+      if (this.bootFreezeT > 0) {
+        this.bootFreezeT -= dt;
+        if (this.bootFreezeT <= 0) {
+          phys.settleSupported(this.pieces, b, 55);
+          phys.wakeUnsupported(this.pieces, b);
+        }
       }
     }
 
@@ -892,6 +1004,7 @@ class Scene {
 
     this.drawHud(ctx, W, H, b);
     this.drawDock(ctx, W, H);
+    this.drawClearToast(ctx, W, H);
 
     if (this.ended) this.drawEndPanel(ctx, W, H);
   }
@@ -983,18 +1096,36 @@ class Scene {
       ctx.fillText(tip, W * 0.5, b.top - 18);
     }
 
-    if (this.msgT > 0 && this.msg && !this.ended) {
-      ctx.globalAlpha = Math.min(1, this.msgT * 2);
-      ctx.font = '800 28px ' + FONT;
-      ctx.fillStyle = Theme.ink;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.strokeStyle = 'rgba(255,248,236,0.9)';
-      ctx.lineWidth = 7;
-      ctx.strokeText(this.msg, W * 0.5, H * 0.4);
-      ctx.fillText(this.msg, W * 0.5, H * 0.4);
-    }
+    ctx.restore();
+  }
 
+  /** 消除得分飘字：独立画在最上层，带实心底条 */
+  drawClearToast(ctx, W, H) {
+    if (!(this.msgT > 0) || !this.msg || this.ended) return;
+    const mx = W * 0.5;
+    const my = H * 0.36;
+    const a = Math.min(1, this.msgT * 1.8);
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.font = '900 34px ' + FONT;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const tw = Math.min(W - 48, ctx.measureText(this.msg).width + 48);
+    const th = 52;
+    roundRect(ctx, mx - tw / 2, my - th / 2, tw, th, 16);
+    ctx.fillStyle = 'rgba(255,140,40,0.96)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,248,236,0.95)';
+    ctx.lineWidth = 2.5;
+    roundRect(ctx, mx - tw / 2, my - th / 2, tw, th, 16);
+    ctx.stroke();
+
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = 'rgba(90,40,0,0.85)';
+    ctx.lineWidth = 6;
+    ctx.strokeText(this.msg, mx, my + 1);
+    ctx.fillStyle = '#fff8ee';
+    ctx.fillText(this.msg, mx, my);
     ctx.restore();
   }
 

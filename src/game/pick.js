@@ -94,6 +94,9 @@ class PickScene {
     this.purpose = opts.purpose === 'rank' ? 'rank' : 'help';
     this.view = 'list'; // list | detail
     this.gameId = null;
+    this.rankTab = 'friend'; // friend | global
+    this.rankScroll = 0;
+    this._drag = null;
     this.t = 0;
     this._layout();
     showBanner('list');
@@ -120,6 +123,7 @@ class PickScene {
         if (this.view === 'detail') {
           this.view = 'list';
           this.gameId = null;
+          this.rankScroll = 0;
           return;
         }
         this.app.goto('home');
@@ -127,6 +131,7 @@ class PickScene {
     });
     this.buttons = [this.btnBack];
     this._hits = [];
+    this._tabHits = [];
   }
 
   update(dt) {
@@ -140,16 +145,50 @@ class PickScene {
     this.t += dt;
     for (let i = 0; i < this.buttons.length; i++) this.buttons[i].update(dt);
 
+    const ptr = P.pointer;
+    if (this.view === 'detail' && this.purpose === 'rank' && this._rankView) {
+      const rv = this._rankView;
+      if (ptr.justPressed && ptr.y >= rv.top && ptr.y <= rv.top + rv.h) {
+        this._drag = { y: ptr.y, scroll: this.rankScroll };
+      }
+      if (this._drag && ptr.down) {
+        this.rankScroll = this._drag.scroll + (this._drag.y - ptr.y);
+        const max = Math.max(0, rv.contentH - rv.h);
+        this.rankScroll = Math.max(0, Math.min(max, this.rankScroll));
+      }
+      if (ptr.justReleased) this._drag = null;
+    }
+
     const taps = P.taps;
     for (let i = 0; i < taps.length; i++) {
       const tap = taps[i];
       if (this.btnBack.handleTouch(tap.x, tap.y)) continue;
+
+      if (this.view === 'detail' && this.purpose === 'rank') {
+        let tabHit = false;
+        for (let j = 0; j < this._tabHits.length; j++) {
+          const h = this._tabHits[j];
+          if (tap.x >= h.x && tap.x <= h.x + h.w && tap.y >= h.y && tap.y <= h.y + h.h) {
+            if (this.rankTab !== h.tab) {
+              this.rankTab = h.tab;
+              this.rankScroll = 0;
+            }
+            tabHit = true;
+            break;
+          }
+        }
+        if (tabHit) continue;
+        continue;
+      }
+
       if (this.view !== 'list') continue;
       for (let j = 0; j < this._hits.length; j++) {
         const h = this._hits[j];
         if (tap.x >= h.x && tap.x <= h.x + h.w && tap.y >= h.y && tap.y <= h.y + h.h) {
           this.gameId = GAMES[h.i].id;
           this.view = 'detail';
+          this.rankTab = 'friend';
+          this.rankScroll = 0;
           break;
         }
       }
@@ -269,46 +308,147 @@ class PickScene {
 
   _drawRank(ctx, W, H, s) {
     const title = rank.LABELS[this.gameId] || '排行';
-    ctx.fillText(title + ' · 本机榜', W * 0.5, s.top + 8);
-
-    const list = rank.getList(this.gameId);
-    const pw = Math.min(340, W - 32);
     const adReserve = this._adReserve || reservedBottom();
-    const ph = Math.min(H - s.top - adReserve - 80, 58 + Math.max(list.length, 1) * 28 + 40);
+    ctx.fillText(title + ' · 排行榜', W * 0.5, s.top + 8);
+
+    const board =
+      this.rankTab === 'global'
+        ? rank.getGlobalBoard(this.gameId)
+        : rank.getFriendBoard(this.gameId);
+    const list = board.show || board.list || [];
+
+    // 页签
+    this._tabHits = [];
+    const tabW = 118;
+    const tabH = 34;
+    const tabY = s.top + 44;
+    const tabs = [
+      { id: 'friend', label: '同玩好友' },
+      { id: 'global', label: '全服总榜' },
+    ];
+    const tabGap = 12;
+    const tabsW = tabW * 2 + tabGap;
+    let tx = (W - tabsW) / 2;
+    for (let i = 0; i < tabs.length; i++) {
+      const active = this.rankTab === tabs[i].id;
+      roundRect(ctx, tx, tabY, tabW, tabH, 12);
+      ctx.fillStyle = active ? Theme.gold : 'rgba(255,248,236,0.95)';
+      ctx.fill();
+      ctx.strokeStyle = active ? 'rgba(240,160,16,0.7)' : 'rgba(91,70,54,0.14)';
+      ctx.lineWidth = 1.5;
+      roundRect(ctx, tx, tabY, tabW, tabH, 12);
+      ctx.stroke();
+      ctx.font = '700 13px ' + FONT;
+      ctx.fillStyle = active ? Theme.goldInk : Theme.inkSoft;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(tabs[i].label, tx + tabW / 2, tabY + tabH / 2);
+      this._tabHits.push({ x: tx, y: tabY, w: tabW, h: tabH, tab: tabs[i].id });
+      tx += tabW + tabGap;
+    }
+
+    const footH = 52;
+    const pw = Math.min(340, W - 32);
     const px = (W - pw) / 2;
-    const py = s.top + 56;
+    const py = tabY + tabH + 12;
+    const ph = Math.max(160, H - adReserve - py - footH - 12);
+    const rowH = 30;
+    const headPad = 36;
+    const contentH = headPad + Math.max(list.length, 1) * rowH + 12;
+
     roundRect(ctx, px, py, pw, ph, 18);
     ctx.fillStyle = Theme.cardWin1;
     ctx.fill();
-    ctx.strokeStyle = 'rgba(60,200,120,0.45)';
+    ctx.strokeStyle =
+      this.rankTab === 'global' ? 'rgba(60,200,120,0.45)' : 'rgba(255,143,181,0.5)';
     ctx.lineWidth = 2;
     roundRect(ctx, px, py, pw, ph, 18);
     ctx.stroke();
 
+    this._rankView = { top: py, h: ph, contentH: contentH };
+    const maxScroll = Math.max(0, contentH - ph);
+    this.rankScroll = Math.max(0, Math.min(maxScroll, this.rankScroll));
+
+    ctx.save();
+    ctx.beginPath();
+    roundRect(ctx, px, py, pw, ph, 18);
+    ctx.clip();
+
+    ctx.font = '500 11px ' + FONT;
+    ctx.fillStyle = Theme.inkMute;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const sub =
+      this.rankTab === 'global'
+        ? '每日 0 点刷新 · 共 ' + board.total + ' 人'
+        : '同玩好友榜';
+    ctx.fillText(sub, W * 0.5, py + 10 - this.rankScroll);
+
     if (!list.length) {
       ctx.font = '500 13px ' + FONT;
       ctx.fillStyle = Theme.inkSoft;
-      ctx.textAlign = 'center';
-      ctx.fillText('还没有成绩 · 去玩一局吧', W * 0.5, py + ph / 2);
-      return;
-    }
+      ctx.textBaseline = 'middle';
+      ctx.fillText(
+        this.rankTab === 'friend' ? '暂无同玩好友 · 先去玩一局吧' : '暂无数据',
+        W * 0.5,
+        py + ph / 2
+      );
+    } else {
+      for (let i = 0; i < list.length; i++) {
+        const row = list[i];
+        const rowY = py + headPad + i * rowH - this.rankScroll;
+        if (rowY < py - rowH || rowY > py + ph + 4) continue;
 
-    for (let i = 0; i < list.length; i++) {
-      const row = list[i];
-      const rowY = py + 24 + i * 28;
-      ctx.textAlign = 'left';
-      ctx.font = '700 13px ' + FONT;
-      ctx.fillStyle = i < 3 ? Theme.score : Theme.ink;
-      ctx.fillText(i + 1 + '.', px + 20, rowY);
-      ctx.fillText(row.score + ' 分', px + 48, rowY);
-      ctx.textAlign = 'right';
-      ctx.font = '500 12px ' + FONT;
-      ctx.fillStyle = Theme.inkMute;
-      const right =
-        row.level && (this.gameId === 'match' || this.gameId === 'spot' || this.gameId === 'match3')
-          ? '第 ' + row.level + ' 关'
-          : row.tip || '';
-      ctx.fillText(right, px + pw - 20, rowY);
+        if (row.isMe) {
+          roundRect(ctx, px + 8, rowY - 4, pw - 16, rowH - 2, 8);
+          ctx.fillStyle = 'rgba(240,160,16,0.18)';
+          ctx.fill();
+        }
+
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.font = '700 13px ' + FONT;
+        ctx.fillStyle = i < 3 ? Theme.score : Theme.ink;
+        ctx.fillText(i + 1 + '.', px + 16, rowY + 10);
+
+        ctx.font = row.isMe ? '800 13px ' + FONT : '600 13px ' + FONT;
+        ctx.fillStyle = row.isMe ? Theme.score : Theme.ink;
+        const name = row.isMe ? (row.name || '我') + '（我）' : row.name || '玩家';
+        ctx.fillText(name, px + 44, rowY + 10);
+
+        ctx.textAlign = 'right';
+        ctx.font = '700 13px ' + FONT;
+        ctx.fillStyle = Theme.ink;
+        ctx.fillText(row.score + ' 分', px + pw - 16, rowY + 10);
+      }
+    }
+    ctx.restore();
+
+    // 底部：我的全服/好友名次
+    const footY = py + ph + 8;
+    roundRect(ctx, px, footY, pw, footH - 4, 14);
+    ctx.fillStyle = 'rgba(255,248,236,0.96)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(91,70,54,0.12)';
+    ctx.lineWidth = 1.2;
+    roundRect(ctx, px, footY, pw, footH - 4, 14);
+    ctx.stroke();
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '700 14px ' + FONT;
+    ctx.fillStyle = Theme.ink;
+    if (board.myRank > 0) {
+      const label = this.rankTab === 'global' ? '全服排名' : '好友排名';
+      ctx.fillText(
+        label + ' 第 ' + board.myRank + ' 名 · ' + board.myScore + ' 分',
+        W * 0.5,
+        footY + (footH - 4) / 2
+      );
+    } else {
+      ctx.font = '600 13px ' + FONT;
+      ctx.fillStyle = Theme.inkSoft;
+      ctx.fillText('玩一局后即可查看你的名次', W * 0.5, footY + (footH - 4) / 2);
     }
   }
 }
